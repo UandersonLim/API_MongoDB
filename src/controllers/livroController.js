@@ -1,3 +1,4 @@
+import { autor } from "../models/Autor.js";
 import livro from "../models/Livro.js";
 
 class LivroController {
@@ -13,13 +14,58 @@ class LivroController {
     };
 
     static async cadastrarLivro (req, res) {
+        const novoLivro = req.body;
+        console.log(novoLivro)
         try {
-            const novoLivro = await livro.create(req.body);
-            res.status(201).json({ message: "criado com sucesso", livro: novoLivro });
+          const autorEncontrado = await autor.findById(novoLivro.autor);
+          const livroCompleto = { ...novoLivro, autor: { ...autorEncontrado._doc }};
+          const livroCriado = await livro.create(livroCompleto);
+          res.status(201).json({ message: "criado com sucesso", livro: livroCriado });
         } catch (erro) {
-            res.status(500).json({ message: `${erro.message} - falha ao cadastrat livro` })
+          res.status(500).json({ message: `${erro.message} - falha ao cadastrar livro` });
+        }
+      }
+
+    static async listarLivroPorId (req, res) {
+        try {
+            const id = req.params.id;
+            const livroEncontrado = await livro.findById(id);
+            res.status(200).json(livroEncontrado)
+        } catch (erro){
+            res.status(500).json({ message: `${erro.message} - falha na requisição do livro`})
+
         }
     };
+
+    static async atualizarLivro (req, res) {
+        try{
+            const id = req.params.id;
+            await livro.findByIdAndUpdate(id, req.body);
+            res.status(200).json({ message: "livro atualizado"})
+        } catch (erro){
+            res.status(500).json({ message: `${erro.message} - falha na atualizção do livro`});
+        }
+    };
+
+    static async excluirLivro (req, res) {
+        try{
+            const id = req.params.id;
+            await livro.findByIdAndDelete(id);
+            res.status(200).json({message: "livro excluído com sucesso"});
+        } catch (erro){
+            res.status(500).json({ message: `${erro.message} - falha da exclusão`});
+        };
+    };
+
+    static async listaLivrosPorEditora (req, res) {
+        const editora = req.query.editora;
+        try{
+            const livrosPorEditora = await livro.find({ editora: editora });
+            res.status(200).json(livrosPorEditora);
+        } catch (erro){
+            res.status(500).json( { message: `${erro.message} - falha na busca` });
+        }
+    }
 };
 
 export default LivroController;
